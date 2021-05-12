@@ -13,6 +13,7 @@ LEARNING_RATE = 0.001
 seed = 42
 gamma = 0.9  # Discount factor for past rewards
 max_steps_per_episode = 10000
+epochs = 200
 env = gym.make('Pendulum-v0')  # Create the environment
 env.seed(seed)
 eps = np.finfo(np.float32).eps.item()  # Smallest number such that 1.0 + eps != 1.0
@@ -22,10 +23,11 @@ num_inputs = 4
 num_actions = 2
 num_hidden = 128
 sample_range = 200
+step_max = 10000
 
 
 class ac_Net:
-    def __init__(self, in_num, out_num):
+    def __init__(self, in_num: int, out_num: int):
         self.in_num = in_num
         self.out_num = out_num
         self.epsilon = 1e-07
@@ -48,16 +50,17 @@ class ac_Net:
         model = models.Model(inputs=input_, outputs=[actor_mu, actor_sigma, critic])
         return model
 
-    def action(self, s):
-        mu, sigma, _ = self.model(s)
-        mu = np.squeeze(mu)
-        sigma = np.squeeze(sigma)
-        normal_dist = np.random.normal(loc=mu, scale=sigma, size=sample_range)
-        normal_action = np.clip(normal_dist, env.action_space.low, env.action_space.high)
-        action = np.random.choice(normal_action)
-        self.action_prob_history.append([mu, sigma, action])
-        return action
+    # def action(self, s):
+    #     mu, sigma, _ = self.model(s)
+    #     mu = np.squeeze(mu)
+    #     sigma = np.squeeze(sigma)
+    #     normal_dist = np.random.normal(loc=mu, scale=sigma, size=sample_range)
+    #     normal_action = np.clip(normal_dist, env.action_space.low, env.action_space.high)
+    #     action = np.random.choice(normal_action)
+    #     self.action_prob_history.append([mu, sigma, action])
+    #     return action
 
+    # gradient tape record critic td_error
     def loss_critic(self, s, r, s_t1):
         loss = keras.losses.Huber()
         with tf.GradientTape() as tape:
@@ -68,6 +71,7 @@ class ac_Net:
         c_loss = loss(td_error, 0)
         return c_loss, td_error
 
+    # gradient tape record actor loss
     def loss_actor(self, action, td):
         with tf.GradientTape() as tape:
             mu, sigma, _ = self.model.model.output
@@ -76,21 +80,38 @@ class ac_Net:
             actor_loss = log_prob * td
         return actor_loss
 
+    # loss optimizer La + Lc
     def loss_op(self, critic_loss, actor_loss):
         optimizer = keras.optimizers.Adam(learning_rate=self.lr)
         loss_sum = critic_loss + actor_loss
         optimizer.apply_gradients(loss, self.model.trainable_variables)
 
     def train_loop(self):
-        keras.optimizers.Optimizer()
-
-
-
-
-
-
-
+        pass
 
     def actor_train(self, s, a, t):
-        x = tf.Tensor()
-        np.finfo(x).eps()
+        pass
+
+
+if __name__ == '__main__':
+
+    env = gym.make('Pendulum-v0')
+    env.seed(1)
+    env = env.unwrapped()
+    state_shape = env.observation_space.shape[0]
+    action_shape = env.action_space.shape[0]
+    action_range = env.action_space.high[0]
+
+    agent = ac_Net(state_shape, action_shape)
+
+    for epoch in range(epochs):
+        obs_init = env.reset()
+        for i in range(step_max):
+            mu, sigma, critic_value = agent.model(s)
+            mu = np.squeeze(mu)
+            sigma = np.squeeze(sigma)
+            normal_dist = np.random.normal(loc=mu, scale=sigma, size=sample_range)
+            normal_action = np.clip(normal_dist, -action_range, action_range)
+            action = np.random.choice(normal_action)
+            agent.action_prob_history.append()
+
