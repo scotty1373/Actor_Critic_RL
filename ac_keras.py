@@ -11,7 +11,7 @@ from IPython import display
 LEARNING_RATE = 0.001
 # Configuration parameters for the whole setup
 seed = 42
-gamma = 0.99  # Discount factor for past rewards
+gamma = 0.9  # Discount factor for past rewards
 max_steps_per_episode = 10000
 env = gym.make('Pendulum-v0')  # Create the environment
 env.seed(seed)
@@ -30,10 +30,12 @@ class ac_Net:
         self.out_num = out_num
         self.epsilon = 1e-07
         self.lr = LEARNING_RATE
+        self.gamma = gamma
         self.model = self.layer_build()
         self.action_prob_history = []
         self.critic_prob_history = []
         self.reward_history = []
+        self.td_error_history = []
 
 
     def layer_build(self):
@@ -56,22 +58,32 @@ class ac_Net:
         self.action_prob_history.append([mu, sigma, action])
         return action
 
-    def critic(self, s, a, s_t1):
-        _, _, critic_value = self.model(s)
-        _, _, critic_value_t1 = self.model(s_t1)
-        td_error =
+    def loss_critic(self, s, r, s_t1):
+        loss = keras.losses.Huber()
+        with tf.GradientTape() as tape:
+            _, _, critic_value = self.model(s)
+            _, _, critic_value_t1 = self.model(s_t1)
+            td_error = critic_value - (critic_value_t1 * self.gamma + r)
+        self.td_error_history.append(td_error)
+        c_loss = loss(td_error, 0)
+        return c_loss, td_error
 
-
-    def loss_cacula(self, action, td):
-        optimizer = keras.optimizers.Adam(learning_rate=self.lr)
-        huber_loss = keras.losses.Huber()
-        with tf.GradientTape as tape:
+    def loss_actor(self, action, td):
+        with tf.GradientTape() as tape:
             mu, sigma, _ = self.model.model.output
             pdf = 1 / np.sqrt(2. * np.pi * sigma) * np.exp(- np.square(action - mu) / (2 * np.square(sigma)))
-            log_prob = np.log(pdf + self.epsilon )
+            log_prob = np.log(pdf + self.epsilon)
             actor_loss = log_prob * td
-        grad = tape.gradient(actor_loss, self.model.trainable_variables)
-        optimizer.minimize(-grad)
+        return actor_loss
+
+    def loss_op(self, critic_loss, actor_loss):
+        optimizer = keras.optimizers.Adam(learning_rate=self.lr)
+        loss_sum = critic_loss + actor_loss
+        optimizer.apply_gradients(loss, self.model.trainable_variables)
+
+    def train_loop(self):
+        keras.optimizers.Optimizer()
+
 
 
 
@@ -80,3 +92,5 @@ class ac_Net:
 
 
     def actor_train(self, s, a, t):
+        x = tf.Tensor()
+        np.finfo(x).eps()

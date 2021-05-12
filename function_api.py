@@ -13,7 +13,7 @@ import os
 import sys
 import time
 
-lr = 0.005
+lr = 0.001
 MNIST_dir = '/home/ubuntu/Python_Project/keras_tfbackend/mnist'
 
 mnist = tf.keras.datasets.mnist
@@ -48,38 +48,43 @@ if __name__ == '__main__':
     # '''
     # +++++++using gradient to apply_gradient+++++++
     # '''
-    # optimizer = keras.optimizers.Adam(learning_rate=lr)
-    # loss = keras.losses.CategoricalCrossentropy()
-    # for epoch in range(epochs):
-    #     print(f'start epoch {epoch}')
-    #     for batch_idx, (x_batch, y_batch) in enumerate(db):
-    #
-    #         with tf.GradientTape() as tape:
-    #             x_batch = tf.reshape(x_batch, (-1, 28, 28, 1))
-    #             out = net(x_batch)
-    #             # loss = tf.reduce_sum(tf.square(out - y_batch)) / x_batch.shape[0]
-    #             loss_grad = loss(y_batch, out)
-    #         grad = tape.gradient(loss_grad, net.trainable_variables)
-    #
-    #         optimizer.apply_gradients(zip(grad, net.trainable_variables))
-    #
-    #         if batch_idx % 100 == 0:
-    #             print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss_grad.numpy()}')
-    # net.save('model.h5')
-    # print('loss:', loss)
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+    loss = keras.losses.CategoricalCrossentropy()
+    for epoch in range(epochs):
+        print(f'start epoch {epoch}')
+        for batch_idx, (x_batch, y_batch) in enumerate(db):
+
+            with tf.GradientTape() as tape:
+                x_batch = tf.reshape(x_batch, (-1, 28, 28, 1))
+                out = net(x_batch)
+                loss = tf.reduce_sum(tf.square(out - y_batch)) / x_batch.shape[0]
+                # loss_grad = loss(y_batch, out)
+            grad = tape.gradient(loss, net.trainable_variables)
+
+            optimizer.apply_gradients(zip(grad, net.trainable_variables))
+
+            if batch_idx % 100 == 0:
+                print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}')
+    net.save('model.h5')
+    print('loss:', loss)
 
     '''
     optimizer.minimaize == tf.GradientTape + gradient + apply_gradients
     '''
-    optimizer = keras.optimizers.SGD(learning_rate=lr)
-    loss = lambda: tf.reduce_sum(tf.square(net(tf.reshape(input, [-1, 28, 28, 1])) - output)) /\
-                   tf.reshape(input, [-1, 28, 28, 1]).shape[0]
-
-    for epoch in range(epochs):
-        for batch_idx, (input, output) in enumerate(db):
-            optimizer.minimize(loss, var_list=net.trainable_variables)
-            if batch_idx % 100 == 0:
-                print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss().numpy()}')
+    # optimizer = keras.optimizers.Adam(learning_rate=lr)
+    # # 此时定义的loss函数本质上是一个操作，
+    # # loss = lambda: tf.reduce_sum(tf.square(net(tf.reshape(input, [-1, 28, 28, 1])) - output)) /\
+    # #                tf.reshape(input, [-1, 28, 28, 1]).shape[0]
+    #
+    # for epoch in range(epochs):
+    #     for batch_idx, (input, output) in enumerate(db):
+    #         with tf.GradientTape() as tape:
+    #             x_batch = tf.reshape(input, (-1, 28, 28, 1))
+    #             out = net(x_batch)
+    #             loss = tf.reduce_sum(tf.square(out - output)) / x_batch.shape[0]
+    #         optimizer.minimize(loss, var_list=net.trainable_variables, tape=tape)
+    #         if batch_idx % 100 == 0:
+    #             print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}')
 
 
     time.sleep(1)
