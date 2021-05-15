@@ -41,6 +41,14 @@ def model_builder():
     return net_
 
 
+def accurency(x_data, y_labels):
+    out_data = net(x_data)
+    pred_index = tf.argmax(out_data, 1)
+    correct = tf.equal(pred_index, tf.argmax(y_labels, axis=1))
+    acc = tf.reduce_mean(tf.cast(correct, 'float'))
+    return acc
+
+
 if __name__ == '__main__':
     net = model_builder()
     net.summary()
@@ -48,43 +56,54 @@ if __name__ == '__main__':
     # '''
     # +++++++using gradient to apply_gradient+++++++
     # '''
-    optimizer = keras.optimizers.Adam(learning_rate=lr)
-    loss = keras.losses.CategoricalCrossentropy()
-    for epoch in range(epochs):
-        print(f'start epoch {epoch}')
-        for batch_idx, (x_batch, y_batch) in enumerate(db):
-
-            with tf.GradientTape() as tape:
-                x_batch = tf.reshape(x_batch, (-1, 28, 28, 1))
-                out = net(x_batch)
-                loss = tf.reduce_sum(tf.square(out - y_batch)) / x_batch.shape[0]
-                # loss_grad = loss(y_batch, out)
-            grad = tape.gradient(loss, net.trainable_variables)
-
-            optimizer.apply_gradients(zip(grad, net.trainable_variables))
-
-            if batch_idx % 100 == 0:
-                print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}')
-    net.save('model.h5')
-    print('loss:', loss)
+    # optimizer = keras.optimizers.Adam(learning_rate=lr)
+    # for epoch in range(epochs):
+    #     print(f'start epoch {epoch}')
+    #     for batch_idx, (x_batch, y_batch) in enumerate(db):
+    #
+    #         with tf.GradientTape() as tape:
+    #             x_batch = tf.reshape(x_batch, (-1, 28, 28, 1))
+    #             out = net(x_batch)
+    #             loss = tf.reduce_sum(tf.square(out - y_batch)) / x_batch.shape[0]
+    #             # loss_grad = loss(y_batch, out)
+    #         grad = tape.gradient(loss, net.trainable_variables)
+    #
+    #         optimizer.apply_gradients(zip(grad, net.trainable_variables))
+    #
+    #         if batch_idx % 100 == 0:
+    #             acc = accurency(tf.reshape(x, (-1, 28, 28, 1)), x_l)
+    #             print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}, acc: {acc}')
+    #
+    # net.save('model.h5')
+    # print('loss:', loss)
 
     '''
     optimizer.minimaize == tf.GradientTape + gradient + apply_gradients
     '''
-    # optimizer = keras.optimizers.Adam(learning_rate=lr)
-    # # 此时定义的loss函数本质上是一个操作，
-    # # loss = lambda: tf.reduce_sum(tf.square(net(tf.reshape(input, [-1, 28, 28, 1])) - output)) /\
-    # #                tf.reshape(input, [-1, 28, 28, 1]).shape[0]
-    #
+    optimizer = keras.optimizers.Adam(learning_rate=lr)
+    '''
+    loss == 'callable' 
+    '''
+    # loss = lambda: tf.reduce_sum(tf.square(net(tf.reshape(input, [-1, 28, 28, 1])) - output)) /\
+    #                tf.reshape(input, [-1, 28, 28, 1]).shape[0]
     # for epoch in range(epochs):
     #     for batch_idx, (input, output) in enumerate(db):
-    #         with tf.GradientTape() as tape:
-    #             x_batch = tf.reshape(input, (-1, 28, 28, 1))
-    #             out = net(x_batch)
-    #             loss = tf.reduce_sum(tf.square(out - output)) / x_batch.shape[0]
-    #         optimizer.minimize(loss, var_list=net.trainable_variables, tape=tape)
+    #         optimizer.minimize(loss, var_list=net.trainable_variables)
     #         if batch_idx % 100 == 0:
-    #             print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}')
+    #             print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss().numpy()}')
+
+    '''
+    loss == Tensor 
+    '''
+    for epoch in range(epochs):
+        for batch_idx, (input, output) in enumerate(db):
+            with tf.GradientTape() as tape:
+                x_batch = tf.reshape(input, (-1, 28, 28, 1))
+                out = net(x_batch)
+                loss = tf.reduce_sum(tf.square(out - output)) / x_batch.shape[0]
+            optimizer.minimize(loss, var_list=net.trainable_variables, tape=tape)
+            if batch_idx % 100 == 0:
+                print(f'epoch: {epoch}, batch: {batch_idx}, loss: {loss.numpy()}')
 
 
     time.sleep(1)

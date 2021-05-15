@@ -8,15 +8,11 @@ from tensorflow_probability import distributions as tfp
 import matplotlib.pyplot as plt
 from IPython import display
 
+
 LEARNING_RATE = 0.001
-# Configuration parameters for the whole setup
-seed = 42
-gamma = 0.9  # Discount factor for past rewards
+gamma = 0.9
 max_steps_per_episode = 10000
 epochs = 200
-env = gym.make('Pendulum-v0')  # Create the environment
-env.seed(seed)
-eps = np.finfo(np.float32).eps.item()  # Smallest number such that 1.0 + eps != 1.0
 
 
 num_inputs = 4
@@ -38,7 +34,6 @@ class ac_Net:
         self.critic_prob_history = []
         self.reward_history = []
         self.td_error_history = []
-
 
     def layer_build(self):
         input_ = Input(shape=(self.in_num,))
@@ -77,41 +72,50 @@ class ac_Net:
             mu, sigma, _ = self.model.model.output
             pdf = 1 / np.sqrt(2. * np.pi * sigma) * np.exp(- np.square(action - mu) / (2 * np.square(sigma)))
             log_prob = np.log(pdf + self.epsilon)
-            actor_loss = log_prob * td
+            actor_loss = -(log_prob * td)
         return actor_loss
 
     # loss optimizer La + Lc
     def loss_op(self, critic_loss, actor_loss):
         optimizer = keras.optimizers.Adam(learning_rate=self.lr)
         loss_sum = critic_loss + actor_loss
-        optimizer.apply_gradients(loss, self.model.trainable_variables)
-
-    def train_loop(self):
-        pass
+        optimizer.apply_gradients(loss_sum, self.model.trainable_variables)
 
     def actor_train(self, s, a, t):
         pass
 
 
-if __name__ == '__main__':
-
+def train_loop(self, epochs_, max_step):
     env = gym.make('Pendulum-v0')
     env.seed(1)
     env = env.unwrapped()
-    state_shape = env.observation_space.shape[0]
     action_shape = env.action_space.shape[0]
+    state_shape = env.observation_space.shape[0]
     action_range = env.action_space.high[0]
 
     agent = ac_Net(state_shape, action_shape)
 
     for epoch in range(epochs):
         obs_init = env.reset()
-        for i in range(step_max):
-            mu, sigma, critic_value = agent.model(s)
+        for i in range(max_step):
+            mu, sigma, critic_value = agent.model(obs_init)
             mu = np.squeeze(mu)
             sigma = np.squeeze(sigma)
             normal_dist = np.random.normal(loc=mu, scale=sigma, size=sample_range)
             normal_action = np.clip(normal_dist, -action_range, action_range)
             action = np.random.choice(normal_action)
-            agent.action_prob_history.append()
+            agent.action_prob_history.append([mu, sigma])
+            agent.critic_prob_history.append(critic_value)
+
+            obs_, reward, _ = env.step(action)
+            agent.reward_history.append(reward)
+
+
+
+
+
+
+
+if __name__ == '__main__':
+
 
