@@ -14,7 +14,7 @@ import os
 
 LEARNING_RATE_ACTOR = 0.0001
 LEARNING_RATE_CRITIC = 0.0001
-MAX_STEP_EPISODE_LEN = 2000
+MAX_STEP_EPISODE_LEN = 3200
 TRAINABLE = True
 T_len = 64
 EPOCHS = 200
@@ -83,7 +83,7 @@ class PPO:
         self._init(self.input_shape, self.output_shape, self.action_space)
         self.lr_actor = LEARNING_RATE_ACTOR
         self.lr_critic = LEARNING_RATE_CRITIC
-        self.batch_size = 32
+        self.batch_size = 64
         self.decay_index = 0.95
         # self.sigma = 0.5
         # self.sigma_actor = np.full((T_len, 1), 0.5, dtype='float32')
@@ -91,8 +91,8 @@ class PPO:
         self.c_loss = torch.nn.MSELoss()
         self.c_opt = torch.optim.Adam(params=self.v.parameters(), lr=self.lr_critic)
         self.a_opt = torch.optim.Adam(params=self.pi.parameters(), lr=self.lr_actor)
-        self.update_actor_epoch = 3
-        self.update_critic_epoch = 3
+        self.update_actor_epoch = 10
+        self.update_critic_epoch = 10
         self.history_critic = 0
         self.history_actor = 0
         self.t = 0
