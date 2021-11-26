@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import random
 
+import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow.keras as keras
 # import tensorflow_probability as tfp
@@ -17,7 +18,7 @@ import os
 LEARNING_RATE_ACTOR = 0.001
 LEARNING_RATE_CRITIC = 0.001
 MAX_MEMORY_LEN = 10000
-MAX_STEP_EPISODE = 150
+MAX_STEP_EPISODE = 3200
 TRAINABLE = True
 DECAY = 0.99
 
@@ -172,7 +173,7 @@ if __name__ == '__main__':
 
     env = gym.make('Pendulum-v0')
     env = env.unwrapped
-    env.seed(1)
+    # env.seed(1)
     test_train_flag = TRAINABLE
 
     action_shape = env.action_space.shape
@@ -186,11 +187,12 @@ if __name__ == '__main__':
     timestep = 0
 
     count = 0
-    while True:
+    ep_history = []
+    for e in range(epochs):
         obs = env.reset()
 
-        ep_history = np.array([])
         obs = obs.reshape(1, 3)
+        ep_rh = 0
         for index in range(MAX_STEP_EPISODE):
             env.render()
 
@@ -210,8 +212,8 @@ if __name__ == '__main__':
             # else:
             #     action = np.array((ang, 0, -acc), dtype='float')
             #     obs_t1, reward, done, _ = env.step(action)
-            reward = reward / 10
-            ep_history = np.append(ep_history, reward)
+            reward = (reward + 16) / 16
+            ep_rh += reward
             agent.state_store_memory(obs, actor, reward, obs_t1)
 
             if test_train_flag is True:
@@ -224,8 +226,11 @@ if __name__ == '__main__':
 
             timestep += 1
             obs = obs_t1
-
-        print(f'epoch: {count},'
-              f'reward_mean: {np.array(ep_history).sum()}, explore: {agent.sigma_fixed}')
-
+        ep_history.append(ep_rh)
+        print(f'epoch: {e},'
+              f'reward_mean: {np.array(ep_rh).sum()}, explore: {agent.sigma_fixed}')
         count += 1
+    data = np.array(ep_history)
+    plt.plot(np.arange(data.shape[0]), data)
+    plt.show()
+    env.close()

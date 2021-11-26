@@ -8,6 +8,7 @@ from collections import deque
 import copy
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import gym
 import time
 import os
@@ -91,8 +92,8 @@ class PPO:
         self.c_loss = torch.nn.MSELoss()
         self.c_opt = torch.optim.Adam(params=self.v.parameters(), lr=self.lr_critic)
         self.a_opt = torch.optim.Adam(params=self.pi.parameters(), lr=self.lr_actor)
-        self.update_actor_epoch = 10
-        self.update_critic_epoch = 10
+        self.update_actor_epoch = 5
+        self.update_critic_epoch = 5
         self.history_critic = 0
         self.history_actor = 0
         self.t = 0
@@ -234,4 +235,8 @@ if __name__ == '__main__':
             ppo.t += 1
         ep_history.append(ep_rh)
         print(f'epochs: {ppo.ep}, ep_reward: {ep_rh}')
+
+    ep_history = np.array(ep_history)
+    plt.plot(np.arange(ep_history.shape[0]), ep_history)
+    plt.show()
     env.close()
